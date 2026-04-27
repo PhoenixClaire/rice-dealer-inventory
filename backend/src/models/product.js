@@ -15,6 +15,7 @@ const productSchema = new mongoose.Schema(
             unique: true,
             required: [true, "Stock keeping unit is required"],
             index: true,
+            lowercase: true, 
         },
         unit: {
             type: String,
