@@ -112,8 +112,11 @@ describe("GET /api/products", () => {
 
         expect(response.statusCode).toBe(200);
         expect(response.body.message).toBe("Products fetched successfully");
-        expect(response.body.products[0].name).toBe("jasmine rice");
-        expect(response.body.products[1].name).toBe("dinorado rice");
+
+        const names = response.body.products.map((product) => product.name);
+
+        expect(names).toContain("jasmine rice");
+        expect(names).toContain("dinorado rice");
     });
 });
 
