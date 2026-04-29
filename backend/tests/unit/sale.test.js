@@ -122,3 +122,67 @@ describe("GET /api/sales", () => {
         expect(receiptNumbers).toContain("OR-002");
     });
 });
+
+describe("GET /api/sales/daily-summary", () => {
+
+    it("should return daily sales summary", async () => {
+        const today = new Date("2026-04-29T10:00:00.000Z");
+
+        await Sale.create([
+            {
+                receiptNumber: "OR-001",
+                customerName: "Juan",
+                items: [
+                {
+                    productId: new mongoose.Types.ObjectId(),
+                    productName: "Jasmine Rice",
+                    sku: "rice001",
+                    quantity: 2,
+                    unitPrice: 100,
+                    lineTotal: 200,
+                },
+                ],
+                totalAmount: 200,
+                createdAt: today,
+                updatedAt: today,
+            },
+            {
+                receiptNumber: "OR-002",
+                customerName: "Maria",
+                items: [
+                {
+                    productId: new mongoose.Types.ObjectId(),
+                    productName: "Jasmine Rice",
+                    sku: "rice001",
+                    quantity: 3,
+                    unitPrice: 100,
+                    lineTotal: 300,
+                },
+                ],
+                totalAmount: 300,
+                createdAt: today,
+                updatedAt: today,
+            },
+        ]);
+
+        const response = await request(app).get(
+            "/api/sales/daily-summary?date=2026-04-29"
+        );
+
+        expect(response.statusCode).toBe(200);
+        expect(response.body.message).toBe("Daily sales summary fetched successfully");
+
+        expect(response.body.totalTransactions).toBe(2);
+        expect(response.body.totalRevenue).toBe(500);
+        expect(response.body.itemSold[0].sku).toBe("rice001");
+        expect(response.body.itemSold[0].totalQuantity).toBe(5);
+        expect(response.body.itemSold[0].totalSales).toBe(500);
+    });
+
+    it("should return 400 if date query is missing", async () => {
+        const response = await request(app).get("/api/sales/daily-summary");
+
+        expect(response.statusCode).toBe(400);
+        expect(response.body.message).toBe("Date query is required.");
+    });
+});

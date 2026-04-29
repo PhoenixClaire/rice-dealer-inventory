@@ -118,4 +118,66 @@ const getAllSales = async (req, res) => {
     }
 };
 
-module.exports = { createSale, getAllSales };
+const getDailySalesSummary = async (req, res) => {
+    try {
+        
+        const { date } = req.query;
+
+        if(!date){
+            return res.status(400).json({
+
+                message: "Date query is required.",
+
+            });
+        }
+
+        const startDate = new Date(`${date}T00:00:00.000Z`);
+        const endDate = new Date(`${date}T23:59:59.999Z`);
+
+        //look for sales within the day
+        const sales = await Sale.find({
+            createdAt: {
+                $gte: startDate,
+                $lte: endDate
+            },
+        });
+
+        let totalRevenue = 0;
+        const itemMap = {};
+
+        for (const sale of sales){
+
+            //compute the total revenue
+            totalRevenue += sale.totalAmount; 
+
+            for (const item of sale.items){
+                if(!itemMap[item.sku]){
+                    itemMap[item.sku] = {
+                        sku: item.sku,
+                        productName: item.productName,
+                        totalQuantity: 0,
+                        totalSales: 0,
+                    };
+                }
+
+                itemMap[item.sku].totalQuantity += item.quantity;
+                itemMap[item.sku].totalSales += item.lineTotal;
+            }
+        }
+
+        return res.status(200).json({
+            message: "Daily sales summary fetched successfully",
+            date,
+            totalTransactions: sales.length,
+            totalRevenue,
+            itemSold: Object.values(itemMap),
+        });
+    } catch (error) {
+        return res.status(500).json({
+            message: "Failed to fetch daily sales summary",
+            error: error.message,
+        });
+    }
+};
+
+module.exports = { createSale, getAllSales, getDailySalesSummary};
